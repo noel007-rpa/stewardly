@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    background-color: theme(colors.slate.50);
+    color: theme(colors.slate.900);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  }
+
+  h1 {
+    font-size: 1.875rem; /* text-3xl */
+    line-height: 2.25rem;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 1.125rem; /* text-lg */
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+}
+
+@media print {
+  [data-print="hide"] {
+    display: none !important;
+  }
+
+  [data-print="page"] {
+    width: 100% !important;
+    margin: 0 !important;
+    background-color: white !important;
+    padding: 0.5in;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Improve print readability */
+  .rounded-lg,
+  .rounded-full {
+    border-radius: 0.25rem;
+  }
+
+  .shadow,
+  .shadow-sm,
+  .shadow-md {
+    box-shadow: none !important;
+  }
+
+  .border {
+    border-color: theme(colors.slate.300) !important;
+  }
+}
