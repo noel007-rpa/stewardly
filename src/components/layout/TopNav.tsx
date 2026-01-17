@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { clearSession } from "../../state/sessionStore";
+import { useAuth } from "../../hooks/useAuth";
 import {
   getHouseholdState,
   setSelectedHouseholdId,
@@ -9,6 +9,7 @@ import {
 
 export function TopNav() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [households, setHouseholds] = useState<Household[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -24,8 +25,8 @@ export function TopNav() {
     // Later: we will invalidate React Query caches on household change.
   }
 
-  function onLogout() {
-    clearSession();
+  async function onLogout() {
+    await signOut();
     navigate("/login");
   }
 

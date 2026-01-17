@@ -19,12 +19,25 @@ function createQueryClient() {
   });
 }
 
+/**
+ * AuthProvider placeholder for future expansion
+ *
+ * Currently, auth state is managed at component level via useAuth hook.
+ * If needed in the future, this can be extended to provide global auth state.
+ *
+ * Note: This doesn't introduce any new dependencies or context overhead.
+ * Authentication remains lightweight with session persistence in localStorage.
+ */
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [client] = React.useState(() => createQueryClient());
 
   return (
     <QueryClientProvider client={client}>
-      {children}
+      <AuthProvider>{children}</AuthProvider>
       {/* {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null} */}
     </QueryClientProvider>
   );
