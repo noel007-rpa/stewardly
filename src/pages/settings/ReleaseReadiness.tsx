@@ -22,6 +22,7 @@ import {
   runNoSecretsInStorageChecks,
   cleanupLegacyStorageKeys,
 } from "../../utils/releaseChecks";
+import { isMVPFrozen, logMVPFreezeStatus } from "../../utils/mvpFreezeGuard";
 
 const RELEASE_CHECKLIST_KEY = "stewardly_release_checklist";
 
@@ -163,6 +164,14 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
     description: "localStorage contains only non-sensitive app state",
     section: "Storage / Migration Safety",
   },
+
+  // MVP Freeze / Version Lock
+  {
+    id: "mvp_freeze_guard",
+    title: "MVP Behavior Frozen",
+    description: "Stewardly v1.0 behavior is locked and cannot drift - new storage keys are blocked",
+    section: "MVP Freeze",
+  },
 ];
 
 export function ReleaseReadiness() {
@@ -177,6 +186,9 @@ export function ReleaseReadiness() {
 
   // Subscribe to lock changes
   useEffect(() => {
+    // Log MVP freeze status on mount
+    logMVPFreezeStatus();
+
     const unsubscribe = subscribeLocks(() => {
       // Re-run checks when locks change
       setQuickCheckResults([]);
@@ -613,6 +625,29 @@ export function ReleaseReadiness() {
       checklistUpdates["storage_no_secrets"] = "fail";
     }
 
+    // Check MVP Freeze Guard
+    try {
+      const mvpFrozen = isMVPFrozen();
+      const passed = mvpFrozen; // Check passes if MVP is frozen (good)
+      results.push({
+        name: "MVP Behavior Frozen",
+        passed,
+        message: passed
+          ? `✓ Stewardly v1.0 behavior is locked - new storage keys blocked, existing keys protected`
+          : `✗ MVP Freeze is inactive - v1.0 behavior is not locked`,
+        timestamp,
+      });
+      checklistUpdates["mvp_freeze_guard"] = passed ? "pass" : "fail";
+    } catch (err) {
+      results.push({
+        name: "MVP Behavior Frozen",
+        passed: false,
+        message: `✗ Error: ${(err as Error).message}`,
+        timestamp,
+      });
+      checklistUpdates["mvp_freeze_guard"] = "fail";
+    }
+
     // Auto-update checklist items from results
     Object.entries(checklistUpdates).forEach(([itemId, status]) => {
       updateChecklistItem(itemId, status, "");
@@ -682,17 +717,42 @@ export function ReleaseReadiness() {
 
       {/* Purge Legacy Keys (DEV only) */}
       {import.meta.env.DEV && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+        <div className={`rounded-lg border p-6 ${
+          isMVPFrozen()
+            ? "border-blue-200 bg-blue-50"
+            : "border-amber-200 bg-amber-50"
+        }`}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-amber-900">🔧 DEV: Purge Legacy Keys</h2>
-              <p className="text-sm text-amber-800 mt-1">
-                Remove legacy localStorage keys to prepare for Release Readiness checks
+              <div className="flex items-center gap-2">
+                <h2 className={`text-lg font-semibold ${
+                  isMVPFrozen() ? "text-blue-900" : "text-amber-900"
+                }`}>
+                  🔧 DEV: Purge Legacy Keys
+                </h2>
+                {isMVPFrozen() && (
+                  <span className="inline-flex items-center rounded-full bg-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-800">
+                    MVP Frozen
+                  </span>
+                )}
+              </div>
+              <p className={`text-sm mt-1 ${
+                isMVPFrozen() ? "text-blue-800" : "text-amber-800"
+              }`}>
+                {isMVPFrozen()
+                  ? "MVP Freeze active - Purge disabled. Storage keys are locked."
+                  : "Remove legacy localStorage keys to prepare for Release Readiness checks"}
               </p>
             </div>
             <button
               onClick={handlePurgeLegacyKeys}
-              className="rounded-lg px-4 py-2 font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+              disabled={isMVPFrozen()}
+              className={`rounded-lg px-4 py-2 font-semibold transition-colors ${
+                isMVPFrozen()
+                  ? "bg-slate-300 text-slate-600 cursor-not-allowed"
+                  : "bg-amber-600 text-white hover:bg-amber-700"
+              }`}
+              title={isMVPFrozen() ? "Purge disabled when MVP is frozen" : "Remove legacy keys"}
             >
               Purge Legacy Keys
             </button>
