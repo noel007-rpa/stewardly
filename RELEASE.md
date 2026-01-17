@@ -81,6 +81,57 @@ Stewardly v1.0.0 uses **static site hosting**:
    - Any static hosting service
    - Self-hosted web server (nginx, Apache)
 
+### Vercel Deployment (Recommended for Supabase Auth)
+
+When deploying to Vercel:
+
+1. **`vercel.json` is included** in the project root
+   - Configures SPA routing for all paths
+   - Required for Supabase auth email redirects to work
+   - Without it: email callback links return 404 errors
+
+2. **Deploy steps:**
+   ```bash
+   # Push to GitHub (if using Git integration)
+   git push origin main
+   
+   # Or deploy directly
+   vercel deploy --prod
+   ```
+
+3. **Verify deployment:**
+   - Check that direct URL navigation works: `https://stewardly.vercel.app/dashboard/cashflow`
+   - Should return 200 OK, not 404
+   - Test Supabase signup email redirect
+
+**Important:** See [`VERCEL_SPA_ROUTING.md`](./VERCEL_SPA_ROUTING.md) for complete SPA routing explanation and why Supabase auth fails without `vercel.json`.
+
+### Other Hosting Services
+
+For static hosts other than Vercel:
+
+1. **GitHub Pages**
+   - Use 404.html workaround (see VERCEL_SPA_ROUTING.md)
+   
+2. **Netlify**
+   - Create `netlify.toml`:
+   ```toml
+   [[redirects]]
+   from = "/*"
+   to = "/index.html"
+   status = 200
+   ```
+
+3. **Self-hosted (nginx)**
+   ```nginx
+   location / {
+     try_files $uri $uri/ /index.html;
+   }
+   ```
+
+4. **Deploy the `dist/` directory** to:
+   - GitHub Pages
+
 3. **Configure for single-page app routing:**
    - Ensure 404s redirect to `index.html`
    - Set cache headers appropriately
