@@ -1,5 +1,4 @@
 import { useDistributionPlans } from "../../state/useDistributionPlans";
-import type { DistributionPlan } from "../../types/distribution";
 import { useNavigate } from "react-router-dom";
 import { EmptyDistributionPlans } from "../../components/distribution/EmptyDistributionPlans";
 import { ActiveDistributionPlanCard } from "../../components/distribution/ActiveDistributionPlanCard";
@@ -39,12 +38,6 @@ export function Plans() {
             isLockedContext={false}
             onEdit={() => navigate(`/plans/${activePlan.id}/edit`)}
             onDuplicate={() => {
-              const newPlan: DistributionPlan = {
-                ...activePlan,
-                id: crypto.randomUUID(),
-                name: `${activePlan.name} (Copy)`,
-                isActive: false,
-              };
               // TODO: Create plan via store
             }}
           />
@@ -60,13 +53,7 @@ export function Plans() {
       <InactiveDistributionPlans
         plans={inactivePlans}
         onView={(plan) => navigate(`/plans/${plan.id}/edit`)}
-        onDuplicate={(plan) => {
-          const newPlan: DistributionPlan = {
-            ...plan,
-            id: crypto.randomUUID(),
-            name: `${plan.name} (Copy)`,
-            isActive: false,
-          };
+        onDuplicate={() => {
           // TODO: Create plan via store
         }}
       />

@@ -2,7 +2,6 @@
 import { useMemo, useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { useDistributionPlan } from "../../state/useDistributionPlan";
 import { useTransactions } from "../../state/useTransactions";
 import { useIncome } from "../../state/useIncome";
 import { useScheduledTemplates } from "../../state/useScheduledTemplates";
@@ -55,7 +54,6 @@ function toPeriodKey(value: string | null | undefined): string | null {
 }
 
 export function MonthlyReport() {
-  const plan = useDistributionPlan();
   const transactions = useTransactions();
   const incomeItems = useIncome();
   const scheduledTemplates = useScheduledTemplates();

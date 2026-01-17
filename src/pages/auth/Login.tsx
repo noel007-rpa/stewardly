@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { setSession } from "../../state/sessionStore";
 import { getDistributionPlan, setDistributionPlan } from "../../state/distributionPlanStore";
-import { CATEGORIES } from "../../constants/categories";
 
 export function Login() {
   const navigate = useNavigate();
