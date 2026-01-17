@@ -20,6 +20,7 @@ import {
   runReportsLockedMonthChecks,
   runStorageKeysStableChecks,
   runNoSecretsInStorageChecks,
+  cleanupLegacyStorageKeys,
 } from "../../utils/releaseChecks";
 
 const RELEASE_CHECKLIST_KEY = "stewardly_release_checklist";
@@ -172,6 +173,7 @@ export function ReleaseReadiness() {
 
   const [quickCheckResults, setQuickCheckResults] = useState<QuickCheckResult[]>([]);
   const [isRunningChecks, setIsRunningChecks] = useState(false);
+  const [purgeMessage, setPurgeMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Subscribe to lock changes
   useEffect(() => {
@@ -633,6 +635,25 @@ export function ReleaseReadiness() {
   const failCount = Object.values(checklist).filter((c) => c.status === "fail").length;
   const notTestedCount = CHECKLIST_ITEMS.length - passCount - failCount;
 
+  const handlePurgeLegacyKeys = () => {
+    try {
+      const result = cleanupLegacyStorageKeys();
+      const keys = result.removedKeys.map((k) => k.key).join(", ");
+      setPurgeMessage({
+        type: "success",
+        message: `Removed ${result.removedKeys.length} legacy key(s): ${keys || "(none found)"}`,
+      });
+      setQuickCheckResults([]);
+      setTimeout(() => runQuickChecks(), 500);
+    } catch (err) {
+      setPurgeMessage({
+        type: "error",
+        message: `Purge failed: ${(err as Error).message}`,
+      });
+    }
+    setTimeout(() => setPurgeMessage(null), 5000);
+  };
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
@@ -658,6 +679,37 @@ export function ReleaseReadiness() {
           <div className="mt-1 text-3xl font-bold text-amber-800">{notTestedCount}</div>
         </div>
       </div>
+
+      {/* Purge Legacy Keys (DEV only) */}
+      {import.meta.env.DEV && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-amber-900">🔧 DEV: Purge Legacy Keys</h2>
+              <p className="text-sm text-amber-800 mt-1">
+                Remove legacy localStorage keys to prepare for Release Readiness checks
+              </p>
+            </div>
+            <button
+              onClick={handlePurgeLegacyKeys}
+              className="rounded-lg px-4 py-2 font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+            >
+              Purge Legacy Keys
+            </button>
+          </div>
+          {purgeMessage && (
+            <div
+              className={`rounded-lg p-3 text-sm ${
+                purgeMessage.type === "success"
+                  ? "border border-emerald-300 bg-emerald-50 text-emerald-900"
+                  : "border border-red-300 bg-red-50 text-red-900"
+              }`}
+            >
+              {purgeMessage.message}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Checks Section */}
       <div className="rounded-lg border border-slate-200 bg-white p-6">
