@@ -23,12 +23,46 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// Production debug log to verify environment configuration at runtime
+if (import.meta.env.DEV) {
+  console.debug(
+    "[Supabase] Initializing with URL:",
+    supabaseUrl?.substring(0, 30) + "..." // Log truncated URL for privacy
+  );
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
-    persistSession: false, // We handle session persistence in SessionStore
+    persistSession: true, // Supabase handles session persistence to localStorage
+    storage: {
+      getItem: (key: string) => {
+        const item = localStorage.getItem(`stewardly_supabase_${key}`);
+        if (import.meta.env.DEV) {
+          console.debug(`[Supabase] Retrieved session key: ${key}`, item ? "found" : "not found");
+        }
+        return item;
+      },
+      setItem: (key: string, value: string) => {
+        if (import.meta.env.DEV) {
+          console.debug(`[Supabase] Storing session key: ${key}`);
+        }
+        localStorage.setItem(`stewardly_supabase_${key}`, value);
+      },
+      removeItem: (key: string) => {
+        if (import.meta.env.DEV) {
+          console.debug(`[Supabase] Removing session key: ${key}`);
+        }
+        localStorage.removeItem(`stewardly_supabase_${key}`);
+      },
+    },
   },
 });
+
+// Log successful initialization
+if (import.meta.env.DEV) {
+  console.debug("[Supabase] Client initialized successfully");
+}
 
 /**
  * Future backend integration notes:
