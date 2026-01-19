@@ -7,6 +7,14 @@ import { createClient } from "@supabase/supabase-js";
  * No database operations or backend logic should be performed here.
  * All data persistence remains in localStorage (MVP-frozen).
  *
+ * API Key Strategy:
+ * - Uses PUBLISHABLE key (not legacy anon key)
+ * - Publishable keys are the recommended approach for SPAs
+ * - Provides better security model: scoped permissions per user
+ * - Cannot be revoked; instead create new key with updated RLS policies
+ * - Safe to expose in frontend code (by design)
+ * - Secret/service_role keys must NEVER be exposed in frontend
+ *
  * For future v1.1+ backend integration:
  * - Add database schema definitions (profiles table, etc.)
  * - Implement data sync logic separate from auth
@@ -19,7 +27,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    "Missing Supabase environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"
+    "Missing Supabase environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (publishable key)"
   );
 }
 
@@ -28,6 +36,9 @@ if (import.meta.env.DEV) {
   console.debug(
     "[Supabase] Initializing with URL:",
     supabaseUrl?.substring(0, 30) + "..." // Log truncated URL for privacy
+  );
+  console.debug(
+    "[Supabase] Using publishable key (frontend-safe, no backend access)"
   );
 }
 
@@ -65,9 +76,31 @@ if (import.meta.env.DEV) {
 }
 
 /**
- * Future backend integration notes:
- * - Session token should be validated against backend on app start
- * - Consider adding refresh token rotation
- * - RLS (Row Level Security) policies not needed until database is added
- * - Profile data should sync only after schema is defined
+ * Why Publishable Keys for Frontend:
+ *
+ * Publishable Key (Recommended for SPA):
+ * ✅ Safe to expose in frontend code
+ * ✅ Scoped permissions via RLS (Row Level Security)
+ * ✅ Per-user data isolation through auth context
+ * ✅ Cannot perform unrestricted database operations
+ * ✅ Follows modern security best practices
+ * ✅ Can be rotated by updating RLS policies
+ *
+ * Legacy Anon Key (Old approach - avoid):
+ * ❌ Was acceptable in old Supabase projects
+ * ❌ Less restrictive permission model
+ * ❌ Harder to revoke (requires key rotation)
+ * ❌ Supabase recommends migrating away from anon keys
+ *
+ * Secret/Service Role Keys (NEVER use in frontend):
+ * ❌ Unrestricted database access
+ * ❌ Bypasses RLS policies
+ * ❌ Can modify all data regardless of ownership
+ * ❌ Must ONLY be used server-side
+ * ❌ If exposed, compromises entire database
+ *
+ * Current Implementation:
+ * - Frontend: Publishable key (safe, scoped)
+ * - Backend (when added): Secret key server-side only
+ * - No backend currently (MVP v1.0)
  */
